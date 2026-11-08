@@ -169,12 +169,15 @@ const FONTS=[
   ['IBM Plex Sans KR','"IBM Plex Sans KR"','IBM+Plex+Sans+KR:wght@400;500;600;700'],
   ['고운돋움','"Gowun Dodum"','Gowun+Dodum'],
   ['나눔명조','"Nanum Myeongjo"','Nanum+Myeongjo:wght@400;700;800'],
+  ['나눔스퀘어 네오','"NanumSquareNeo","NanumSquareNeo-Variable"','https://hangeul.pstatic.net/hangeul_static/css/nanum-square-neo.css'],
+  ['나눔바른고딕','"NanumBarunGothic"','https://hangeul.pstatic.net/hangeul_static/css/nanum-barun-gothic.css'],
+  ['마루부리','"MaruBuri"','https://hangeul.pstatic.net/hangeul_static/css/maru-buri.css'],
   ['시스템 기본','system-ui',null],
 ];
 const FALLBACK=',system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif';
 function applyFont(i){
   const f=FONTS[i]||FONTS[0];
-  if(f[2]&&!document.getElementById('gf-'+i)){const l=document.createElement('link');l.id='gf-'+i;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+f[2]+'&display=swap';document.head.appendChild(l)}
+  if(f[2]&&!document.getElementById('gf-'+i)){const l=document.createElement('link');l.id='gf-'+i;l.rel='stylesheet';l.href=f[2].startsWith('http')?f[2]:'https://fonts.googleapis.com/css2?family='+f[2]+'&display=swap';document.head.appendChild(l)}
   document.documentElement.style.setProperty('--sans',f[1]+FALLBACK);
   try{localStorage.setItem('pbr-font',String(i))}catch(e){}
 }
