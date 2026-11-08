@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>삼성전자 PBR 트리거 장부</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 상단 현황 스트립 → 트리거 사다리(주 표) → 입력/기록 2열 → 운영 룰. 장부처럼 숫자가 주인공. */
+:root{
+  --bg:#f5f6f4; --panel:#ffffff; --ink:#1d2421; --muted:#5f6b66; --line:#d9dfdb;
+  --accent:#1f5f4f; --accent-soft:#e3eee9;
+  --up:#c8322b; --down:#2456b8; --warn:#a76300; --warn-soft:#fbf0dc; --hold-soft:#eceff6;
+  --sans:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121715; --panel:#1a211e; --ink:#e4ebe7; --muted:#97a59f; --line:#2c3632;
+  --accent:#6cc2a8; --accent-soft:#1f3029; --up:#ff7a70; --down:#7ea6ff; --warn:#f0b450; --warn-soft:#33291a; --hold-soft:#22283a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121715; --panel:#1a211e; --ink:#e4ebe7; --muted:#97a59f; --line:#2c3632;
+  --accent:#6cc2a8; --accent-soft:#1f3029; --up:#ff7a70; --down:#7ea6ff; --warn:#f0b450; --warn-soft:#33291a; --hold-soft:#22283a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px}
+h1{font-size:22px;margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:15px;margin:0 0 10px;font-weight:600}
+.sub{color:var(--muted);margin:2px 0 0;font-size:13px}
+.num,td.n,th.n{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.up{color:var(--up)} .down{color:var(--down)}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stat{background:var(--panel);padding:12px 14px;min-width:0}
+.stat .k{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.stat .v{font-family:var(--mono);font-size:19px;font-weight:500;margin-top:2px}
+.stat .d{font-size:12px;color:var(--muted)}
+.alert{border:1px solid var(--warn);background:var(--warn-soft);color:var(--ink);padding:10px 14px;border-radius:8px}
+.alert b{color:var(--warn)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{font-weight:500;color:var(--muted);font-size:12px}
+td.n,th.n{text-align:right}
+tr.reserve td{color:var(--muted)}
+.pill{display:inline-block;font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-family:var(--sans)}
+.p-done{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.p-hit{background:var(--up);border-color:var(--up);color:#fff}
+.p-hold{background:var(--hold-soft);color:var(--down);border-color:var(--down)}
+.p-frozen{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.p-limit{color:var(--warn);border-color:var(--warn)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+input,select,textarea{font:inherit;font-family:var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0}
+textarea{font-size:12px;min-height:70px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-size:13px;border:1px solid var(--accent);background:var(--accent);color:var(--panel);border-radius:6px;padding:6px 12px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button.x{border:none;background:none;color:var(--muted);padding:0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:10px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+ol.rules{margin:0;padding-left:20px;display:grid;gap:10px}
+ol.rules li{max-width:72ch}
+ol.rules b{font-weight:600}
+.state{font-size:12px;margin-left:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>삼성전자 PBR 트리거 장부</h1>
+    <p class="sub">2027F BPS × PBR 밴드(1.05→0.85배) 5단계, 단계마다 2배 증액. 분기 실적 뒤 컨센서스를 입력하면 트리거가 다시 계산됩니다.</p>
+  </header>
+
+  <section class="strip" id="strip" aria-label="현황"></section>
+  <div id="alerts" style="display:grid;gap:8px"></div>
+
+  <section class="panel">
+    <h2>트리거 사다리</h2>
+    <div class="scroll"><table id="ladder"></table></div>
+    <p class="note">가격은 100원 단위 반올림. 계획 주수는 투입액 ÷ 트리거가(내림). 손익은 해당 단계에서 멈췄을 때 그 트리거가 기준.</p>
+  </section>
+
+  <div class="cols">
+    <section class="panel">
+      <h2>컨센서스 기록 <span class="state" id="baseInfo"></span></h2>
+      <div class="form">
+        <label>기준일<input id="sDate" type="date"></label>
+        <label>2027F BPS<input id="sBps" type="number" step="100"></label>
+        <label>2027F EPS<input id="sEps" type="number" step="100"></label>
+        <label>그날 종가<input id="sPx" type="number" step="100"></label>
+        <label>출처<input id="sSrc" type="text" placeholder="예: 한투, 컨센 평균"></label>
+      </div>
+      <div class="row"><button id="addSnap">분기 갱신 저장</button></div>
+      <p class="note">저장하면 트리거가 새 BPS로 바뀌고, 그날 종가가 이미 트리거 아래인 미체결 단계는 '보류'(소급 금지)가 됩니다.</p>
+      <div class="scroll"><table id="snaps"></table></div>
+    </section>
+
+    <section class="panel">
+      <h2>매수 기록</h2>
+      <div class="form">
+        <label>체결일<input id="bDate" type="date"></label>
+        <label>단계<select id="bLvl"></select></label>
+        <label>체결가<input id="bPx" type="number" step="100"></label>
+        <label>주수<input id="bQty" type="number" step="1"></label>
+      </div>
+      <div class="row"><button id="addBuy">매수 저장</button></div>
+      <div class="scroll"><table id="buys"></table></div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>현재가와 설정</h2>
+    <div class="form">
+      <label>현재가<input id="cPx" type="number" step="100"></label>
+      <label>트리거 예산 합계(원)<input id="cBudget" type="number" step="1000000"></label>
+      <label>예비 현금(원)<input id="cReserve" type="number" step="1000000"></label>
+      <label>분기당 최대 매수 횟수<input id="cQmax" type="number" min="1" step="1"></label>
+      <label>컨센 하향 재검토선(%)<input id="cCut" type="number" step="1"></label>
+    </div>
+    <div class="row"><button id="savePx" class="ghost">현재가 반영</button></div>
+    <p class="note">현재가를 트리거 위로 입력하면 그 단계의 보류가 풀립니다(한 번 위로 올라갔다 다시 내려와야 매수).</p>
+  </section>
+
+  <section class="panel">
+    <h2>운영 룰</h2>
+    <ol class="rules">
+      <li><b>갱신 시점.</b> 1·4·7·10월 실적 발표 다음 주에 2027F BPS·EPS를 다시 적습니다. 갱신일 외에는 트리거를 손대지 않습니다.</li>
+      <li><b>컨센서스 10% 하향.</b> 최초 기준 BPS 대비 최신 BPS가 10% 이상 낮아지면 이미 산 물량은 그대로 두고, 남은 단계는 모두 '재검토'로 멈춥니다. 하향 원인을 리포트로 확인한 뒤 밴드나 예산을 다시 정할 때까지 신규 매수는 없습니다.</li>
+      <li><b>소급 매수 금지.</b> 재계산으로 트리거가 올라가 이미 현재가 위에 놓인 단계는 그날 사지 않습니다. 주가가 그 트리거 위로 올라섰다가 다시 내려올 때만 매수합니다.</li>
+      <li><b>분기당 매수 횟수 제한.</b> 한 분기에 최대 2회까지 체결합니다. 급락으로 여러 단계를 한꺼번에 지나도 다음 분기로 넘깁니다. 하락 속도가 빠를수록 정보도 빨리 바뀌기 때문입니다.</li>
+      <li><b>현금 30%.</b> 총자금 1억 원 중 7,000만 원만 5단계에 쓰고 3,000만 원은 예비로 둡니다. 5단계를 모두 채운 뒤에도 더 빠지면 0.80배·0.75배에서 절반씩 씁니다. 단 2번 룰로 멈춘 상태라면 예비 현금도 쓰지 않습니다.</li>
+      <li><b>한계.</b> 이 장부는 BPS 추정이 틀렸다는 걸 빨리 알아채기 위한 도구입니다. 2027F BPS 자체가 맞는지는 알려주지 않습니다.</li>
+    </ol>
+  </section>
+
+  <section class="panel">
+    <h2>백업</h2>
+    <p class="note" style="margin-top:0">기록은 지금 이 브라우저에만 저장됩니다. 저장 방식을 정하기 전까지는 아래 백업 문자열을 복사해 두세요.</p>
+    <div class="row"><button id="copyJson" class="ghost">백업 복사</button><button id="loadJson" class="ghost">붙여넣은 백업 불러오기</button><button id="reset" class="ghost">예시값으로 초기화</button><span class="state" id="msg"></span></div>
+    <textarea id="json" aria-label="백업 JSON" style="margin-top:10px"></textarea>
+  </section>
+</div>
+
+<script>
+const LEVELS=[1.05,1.00,0.95,0.90,0.85];
+const RES_LEVELS=[0.80,0.75];
+const KEY='pbr-ledger-v1';
+const won=n=>Math.round(n).toLocaleString('ko-KR');
+const man=n=>Math.round(n/1e4).toLocaleString('ko-KR')+'만';
+const r100=x=>Math.floor(x/100+0.5)*100;
+const pct=(x,d=1)=>(x>0?'+':'')+(x*100).toFixed(d)+'%';
+const cls=x=>x>0?'up':(x<0?'down':'');
+const today=()=>new Date().toISOString().slice(0,10);
+const qOf=d=>{const t=new Date(d);return t.getFullYear()+'Q'+(Math.floor(t.getMonth()/3)+1)};
+
+function sample(){return{
+  price:184700,budget:70000000,reserve:30000000,qmax:2,cut:10,
+  snaps:[{date:'2026-11-08',bps:164500,eps:66600,px:184700,src:'대화 기준값(EPS는 PER 2.2배에서 역산, 확인 필요)'}],
+  buys:[],holds:[]
+}}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.snaps)S=sample();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+const latest=()=>S.snaps[S.snaps.length-1];
+const base=()=>S.snaps[0];
+function trig(l){return r100(latest().bps*l)}
+function amounts(){const u=S.budget/31;return LEVELS.map((_,i)=>u*2**i)}
+function frozen(){return latest().bps<=base().bps*(1-S.cut/100)}
+function boughtAt(l){return S.buys.filter(b=>b.lvl===l)}
+function buysInQuarter(q){return S.buys.filter(b=>qOf(b.date)===q).length}
+
+function render(){
+  const L=latest(), px=S.price, bps=L.bps, eps=L.eps;
+  const amt=amounts();
+  const shares=S.buys.reduce((a,b)=>a+b.qty,0), cost=S.buys.reduce((a,b)=>a+b.qty*b.px,0);
+  const avg=shares?cost/shares:0;
+  const qNow=qOf(today()), qUsed=buysInQuarter(qNow);
+  const fz=frozen();
+  const bpsChg=bps/base().bps-1;
+
+  // ladder rows
+  let cum=0,cumCost=0,next=null;
+  const rows=LEVELS.map((l,i)=>{
+    const t=trig(l), a=amt[i], q=Math.floor(a/t);
+    cum+=q;cumCost+=q*t;const sAvg=cumCost/cum;
+    const done=boughtAt(l).length>0;
+    let st;
+    if(done)st='<span class="pill p-done">체결</span>';
+    else if(fz)st='<span class="pill p-frozen">재검토</span>';
+    else if(S.holds.includes(l))st='<span class="pill p-hold">보류·소급금지</span>';
+    else if(px<=t&&qUsed>=S.qmax)st='<span class="pill p-limit">다음 분기</span>';
+    else if(px<=t)st='<span class="pill p-hit">매수 신호</span>';
+    else st='<span class="pill">대기</span>';
+    if(!done&&!fz&&!next&&!S.holds.includes(l))next={l,t,q,a};
+    return `<tr><td class="n">${l.toFixed(2)}배</td><td class="n">${won(t)}</td><td class="n ${cls(t/px-1)}">${pct(t/px-1)}</td><td class="n">${man(a)}</td><td class="n">${q}</td><td class="n">${eps?(t/eps).toFixed(1)+'배':'–'}</td><td class="n">${won(sAvg)}</td><td class="n ${cls(t/sAvg-1)}">${pct(t/sAvg-1)}</td><td>${st}</td></tr>`;
+  });
+  const allDone=LEVELS.every(l=>boughtAt(l).length);
+  const resRows=RES_LEVELS.map(l=>{const t=r100(bps*l);const a=S.reserve/2;
+    const st=fz?'<span class="pill p-frozen">재검토</span>':(allDone&&px<=t?'<span class="pill p-hit">예비 투입</span>':'<span class="pill">5단계 후</span>');
+    return `<tr class="reserve"><td class="n">${l.toFixed(2)}배</td><td class="n">${won(t)}</td><td class="n">${pct(t/px-1)}</td><td class="n">${man(a)}</td><td class="n">${Math.floor(a/t)}</td><td class="n">${eps?(t/eps).toFixed(1)+'배':'–'}</td><td class="n">–</td><td class="n">–</td><td>${st}</td></tr>`});
+  document.getElementById('ladder').innerHTML=`<thead><tr><th class="n">2027F PBR</th><th class="n">트리거가</th><th class="n">현재가 대비</th><th class="n">투입액</th><th class="n">계획 주수</th><th class="n">PER</th><th class="n">여기서 멈출 때 평단</th><th class="n">그때 손익</th><th>상태</th></tr></thead><tbody>${rows.join('')}<tr><td colspan="9" style="font-size:12px;color:var(--muted);padding-top:12px">예비 현금 (룰 5)</td></tr>${resRows.join('')}</tbody>`;
+
+  // strip
+  const pbr=px/bps;
+  const nx=next?`${next.l.toFixed(2)}배 ${won(next.t)}`:'없음';
+  const nxd=next?`현재가 대비 ${pct(next.t/px-1)}`:(fz?'재검토 중':'전 단계 처리');
+  const pl=shares?(px/avg-1):0;
+  document.getElementById('strip').innerHTML=[
+    ['현재가',won(px),`PBR ${pbr.toFixed(2)}배 · PER ${eps?(px/eps).toFixed(1):'–'}배`],
+    ['다음 매수점',nx,nxd],
+    ['보유 / 평단',shares?`${shares}주`:'0주',shares?`평단 ${won(avg)}원`:'아직 매수 없음'],
+    ['평가손익',shares?`<span class="${cls(pl)}">${pct(pl)}</span>`:'–',shares?`${won(shares*px-cost)}원`:''],
+    ['집행 / 잔여',man(cost),`트리거 예산 잔여 ${man(S.budget-cost)}`],
+    [`${qNow} 매수 횟수`,`${qUsed} / ${S.qmax}`,qUsed>=S.qmax?'이번 분기 한도 소진':'한도 내'],
+  ].map(([k,v,d])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+  // alerts
+  const al=[];
+  if(fz)al.push(`<div class="alert"><b>룰 2 발동.</b> 최신 BPS ${won(bps)}원이 최초 기준 ${won(base().bps)}원보다 ${pct(bpsChg)} 낮습니다. 남은 단계와 예비 현금 집행을 멈추고 하향 원인을 확인하세요.</div>`);
+  else if(bpsChg<=-0.05)al.push(`<div class="alert"><b>주의.</b> 기준 대비 BPS ${pct(bpsChg)}. 재검토선(${-S.cut}%)에 가까워지고 있습니다.</div>`);
+  if(S.holds.length)al.push(`<div class="alert"><b>소급 금지 보류:</b> ${S.holds.map(l=>l.toFixed(2)+'배').join(', ')}. 주가가 해당 트리거 위로 올라선 뒤 다시 내려와야 매수합니다.</div>`);
+  document.getElementById('alerts').innerHTML=al.join('');
+
+  document.getElementById('baseInfo').textContent=`기준 ${won(base().bps)} → 최신 ${won(bps)} (${pct(bpsChg)})`;
+  document.getElementById('snaps').innerHTML=`<thead><tr><th>기준일</th><th class="n">BPS</th><th class="n">EPS</th><th class="n">종가</th><th>출처</th><th></th></tr></thead><tbody>${S.snaps.map((s,i)=>`<tr><td class="n">${s.date}</td><td class="n">${won(s.bps)}</td><td class="n">${s.eps?won(s.eps):'–'}</td><td class="n">${won(s.px)}</td><td style="white-space:normal;min-width:120px">${s.src||''}</td><td>${i>0?`<button class="x" data-ds="${i}" aria-label="삭제">×</button>`:''}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('buys').innerHTML=S.buys.length?`<thead><tr><th>체결일</th><th class="n">단계</th><th class="n">체결가</th><th class="n">주수</th><th class="n">금액</th><th></th></tr></thead><tbody>${S.buys.map((b,i)=>`<tr><td class="n">${b.date}</td><td class="n">${b.lvl.toFixed(2)}배</td><td class="n">${won(b.px)}</td><td class="n">${b.qty}</td><td class="n">${man(b.qty*b.px)}</td><td><button class="x" data-db="${i}" aria-label="삭제">×</button></td></tr>`).join('')}</tbody>`:'<tbody><tr><td style="color:var(--muted)">아직 체결 기록이 없습니다. 첫 매수는 1.05배 트리거에 닿을 때입니다.</td></tr></tbody>';
+
+  document.getElementById('bLvl').innerHTML=[...LEVELS,...RES_LEVELS].map(l=>`<option value="${l}">${l.toFixed(2)}배</option>`).join('');
+  for(const [id,v] of [['cPx',S.price],['cBudget',S.budget],['cReserve',S.reserve],['cQmax',S.qmax],['cCut',S.cut]]){const e=document.getElementById(id);if(document.activeElement!==e)e.value=v}
+  document.getElementById('json').value=JSON.stringify(S);
+}
+
+const $=id=>document.getElementById(id);
+$('sDate').value=today();$('bDate').value=today();
+$('addSnap').onclick=()=>{
+  const s={date:$('sDate').value,bps:+$('sBps').value,eps:+$('sEps').value||0,px:+$('sPx').value,src:$('sSrc').value.trim()};
+  if(!s.bps||!s.px){$('msg').textContent='BPS와 그날 종가를 입력하세요.';return}
+  S.snaps.push(s);S.price=s.px;
+  S.holds=LEVELS.filter(l=>!boughtAt(l).length&&s.px<=r100(s.bps*l));
+  ['sBps','sEps','sPx','sSrc'].forEach(i=>$(i).value='');save();render();
+};
+$('addBuy').onclick=()=>{
+  const b={date:$('bDate').value,lvl:+$('bLvl').value,px:+$('bPx').value,qty:+$('bQty').value};
+  if(!b.px||!b.qty)return;
+  S.buys.push(b);S.buys.sort((a,c)=>a.date.localeCompare(c.date));S.holds=S.holds.filter(l=>l!==b.lvl);
+  $('bPx').value='';$('bQty').value='';save();render();
+};
+$('savePx').onclick=()=>{
+  S.price=+$('cPx').value||S.price;S.budget=+$('cBudget').value||S.budget;S.reserve=+$('cReserve').value||0;
+  S.qmax=+$('cQmax').value||2;S.cut=+$('cCut').value||10;
+  S.holds=S.holds.filter(l=>S.price<=trig(l));save();render();
+};
+document.addEventListener('click',e=>{
+  const ds=e.target.dataset.ds, db=e.target.dataset.db;
+  if(ds){S.snaps.splice(+ds,1);save();render()}
+  if(db){S.buys.splice(+db,1);save();render()}
+});
+$('copyJson').onclick=()=>{const t=$('json');navigator.clipboard.writeText(t.value).then(()=>$('msg').textContent='복사했습니다.',()=>{t.select();$('msg').textContent='선택해 두었습니다. 직접 복사하세요.'})};
+$('loadJson').onclick=()=>{try{const o=JSON.parse($('json').value);if(!o.snaps)throw 0;S=o;S.holds=S.holds||[];save();render();$('msg').textContent='불러왔습니다.'}catch(e){$('msg').textContent='백업 형식이 아닙니다.'}};
+let armed=false;
+$('reset').onclick=()=>{if(!armed){armed=true;$('reset').textContent='한 번 더 누르면 초기화';setTimeout(()=>{armed=false;$('reset').textContent='예시값으로 초기화'},3000);return}
+  S=sample();save();render();armed=false;$('reset').textContent='예시값으로 초기화';$('msg').textContent='초기화했습니다.'};
+render();
+</script>
+</body>
+</html>
