@@ -135,7 +135,7 @@ ol.rules b{font-weight:600}
       <label>컨센 하향 재검토선(%)<input id="cCut" type="number" step="1"></label>
     </div>
     <div class="row"><button id="savePx" class="ghost">현재가 반영</button></div>
-    <p class="note">현재가를 트리거 위로 입력하면 그 단계의 보류가 풀립니다(한 번 위로 올라갔다 다시 내려와야 매수).</p>
+    <p class="note">평일 15:45 이후 장 마감 종가가 자동으로 들어옵니다. 직접 입력한 값은 다음 종가가 나오면 덮어씁니다. 현재가를 트리거 위로 입력하면 그 단계의 보류가 풀립니다(한 번 위로 올라갔다 다시 내려와야 매수).</p>
   </section>
 
   <section class="panel">
@@ -247,7 +247,7 @@ function render(){
   const nxd=next?`현재가 대비 ${pct(next.t/px-1)}`:(fz?'재검토 중':'전 단계 처리');
   const pl=shares?(px/avg-1):0;
   document.getElementById('strip').innerHTML=[
-    ['현재가',won(px),`PBR ${pbr.toFixed(2)}배 · PER ${eps?(px/eps).toFixed(1):'–'}배`],
+    [S.priceDate?`현재가 · ${S.priceDate.slice(5).replace('-','/')} ${S.priceSrc==='auto'?'종가':'수동'}`:'현재가',won(px),`PBR ${pbr.toFixed(2)}배 · PER ${eps?(px/eps).toFixed(1):'–'}배`],
     ['다음 매수점',nx,nxd],
     ['보유 / 평단',shares?`${shares}주`:'0주',shares?`평단 ${won(avg)}원`:'아직 매수 없음'],
     ['평가손익',shares?`<span class="${cls(pl)}">${pct(pl)}</span>`:'–',shares?`${won(shares*px-cost)}원`:''],
@@ -292,6 +292,7 @@ $('addBuy').onclick=()=>{
 $('savePx').onclick=()=>{
   S.price=+$('cPx').value||S.price;
   S.qmax=+$('cQmax').value||2;S.cut=+$('cCut').value||10;
+  S.priceDate=today();S.priceSrc='manual';
   S.holds=S.holds.filter(l=>S.price<=trig(l));save();render();
 };
 $('cTotal').oninput=()=>{const v=+$('cTotal').value;if(v>0){S.total=v;alloc();save();render()}};
@@ -308,6 +309,12 @@ let armed=false;
 $('reset').onclick=()=>{if(!armed){armed=true;$('reset').textContent='한 번 더 누르면 초기화';setTimeout(()=>{armed=false;$('reset').textContent='예시값으로 초기화'},3000);return}
   S=sample();alloc();save();render();armed=false;$('reset').textContent='예시값으로 초기화';$('msg').textContent='초기화했습니다.'};
 render();
+fetch('price.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{
+  if(!j||!(j.close>0)||!j.date)return;
+  if(S.priceDate&&j.date<S.priceDate)return;
+  S.price=j.close;S.priceDate=j.date;S.priceSrc='auto';
+  S.holds=S.holds.filter(l=>S.price<=trig(l));save();render();
+}).catch(()=>{});
 </script>
 </body>
 </html>

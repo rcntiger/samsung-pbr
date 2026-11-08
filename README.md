@@ -5,3 +5,4 @@
 - 페이지: https://rcntiger.github.io/samsung-pbr/
 - 분기(1·4·7·10월) 실적 후 2027F BPS·EPS·종가를 입력하면 트리거가 다시 계산됩니다.
 - 기록은 브라우저 localStorage에만 저장됩니다. 백업 문자열을 복사해 두세요.
+- 평일 15:45(KST) GitHub Actions가 네이버 증권에서 종가를 받아 `price.json`에 커밋하고, 페이지는 열릴 때 이 값을 현재가로 씁니다. Actions 탭에서 "장 마감 종가 반영"을 수동 실행할 수도 있습니다.
